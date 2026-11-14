@@ -7,7 +7,8 @@ async function main() {
   await c.waitForDeployment();
   const { abi } = await hre.artifacts.readArtifact("RentalAgreement");
   const { chainId } = await hre.ethers.provider.getNetwork();
-  const out = { address: await c.getAddress(), chainId: Number(chainId), abi };
+  const { blockNumber: deployBlock } = await c.deploymentTransaction().wait();
+  const out = { address: await c.getAddress(), chainId: Number(chainId), deployBlock, abi };
   fs.writeFileSync(path.join(__dirname, "../frontend/contract.json"), JSON.stringify(out, null, 2));
   console.log(`RentalAgreement deployed to ${out.address} (chain ${out.chainId})`);
 }

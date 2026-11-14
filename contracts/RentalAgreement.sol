@@ -28,7 +28,7 @@ contract RentalAgreement {
     }
 
     Property[] public properties;
-    Agreement[] public agreements;
+    Agreement[] private agreements; // read via getAgreement: a public getter of 16 fields is "stack too deep" without viaIR
     mapping(uint256 => Payment[]) private _payments;
     mapping(address => uint256) public credit; // withdrawable balance
 
@@ -95,6 +95,8 @@ contract RentalAgreement {
         credit[a.owner] += msg.value;
         emit RentPaid(id, n + 1, msg.value, block.timestamp);
     }
+
+    function getAgreement(uint256 id) external view returns (Agreement memory) { return agreements[id]; }
 
     function getPayments(uint256 id) external view returns (Payment[] memory) { return _payments[id]; }
 

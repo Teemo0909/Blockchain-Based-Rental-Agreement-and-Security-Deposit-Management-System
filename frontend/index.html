@@ -272,11 +272,11 @@ async function connect() {
 
 async function load() {
   const [events, credit, block] = await Promise.all([
-    c.queryFilter(c.filters.AgreementCreated()), c.credit(me), provider.getBlock("latest"),
+    c.queryFilter(c.filters.AgreementCreated(), cfg.deployBlock || 0), c.credit(me), provider.getBlock("latest"),
   ]);
   chainNow = block.timestamp;
   const all = await Promise.all(events.map(async (ev) => {
-    const id = ev.args.id, a = await c.agreements(id);
+    const id = ev.args.id, a = await c.getAgreement(id);
     const [p, payments] = await Promise.all([c.properties(a.propertyId), c.getPayments(id)]);
     return { id, a, name: p.name, payments };
   }));
@@ -420,7 +420,7 @@ function bindActions({ id, a }) {
 }
 
 async function openAgreementDialog() {
-  const evs = await c.queryFilter(c.filters.PropertyRegistered(null, me));
+  const evs = await c.queryFilter(c.filters.PropertyRegistered(null, me), cfg.deployBlock || 0);
   if (!evs.length) { toast("ลงทะเบียนห้องก่อน แล้วจึงสร้างสัญญาได้", true); return $("#dlgProperty").showModal(); }
   const props = await Promise.all(evs.map(async (e) => ({ id: e.args.id, p: await c.properties(e.args.id) })));
   $("#fAgreement").property.innerHTML = props.map(({ id, p }) =>
