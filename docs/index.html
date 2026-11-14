@@ -396,7 +396,7 @@ async function connect() {
       return intro("เครือข่ายไม่ตรงกับสัญญา", `สลับ MetaMask ไปที่เครือข่าย chain ID <code>${cfg.chainId}</code> (localhost:8545) หรือ deploy ใหม่ด้วย <code>npm run deploy</code>`);
     c = new ethers.Contract(cfg.address, cfg.abi, signer);
     const w = await c.CLAIM_WINDOW?.().catch(() => null);
-    if (w == null) return intro("สัญญาที่ deploy ไว้เป็นเวอร์ชันเก่า", "deploy <code>RentalAgreement.sol</code> ตัวล่าสุดใหม่ แล้วอัปเดต <code>frontend/contract.json</code> ให้ตรงกับ address และ ABI ใหม่");
+    if (w == null) return intro("สัญญาที่ deploy ไว้เป็นเวอร์ชันเก่า", "deploy <code>RentalAgreement.sol</code> ตัวล่าสุดใหม่ แล้วอัปเดต <code>docs/contract.json</code> ให้ตรงกับ address และ ABI ใหม่");
     claimWindow = Number(w);
     await load();
   } catch (e) { toast(errText(e), "err"); }

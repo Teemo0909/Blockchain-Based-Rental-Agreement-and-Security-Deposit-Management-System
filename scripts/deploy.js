@@ -9,7 +9,7 @@ async function main() {
   const { chainId } = await hre.ethers.provider.getNetwork();
   const { blockNumber: deployBlock } = await c.deploymentTransaction().wait();
   const out = { address: await c.getAddress(), chainId: Number(chainId), deployBlock, abi };
-  fs.writeFileSync(path.join(__dirname, "../frontend/contract.json"), JSON.stringify(out, null, 2));
+  fs.writeFileSync(path.join(__dirname, "../docs/contract.json"), JSON.stringify(out, null, 2));
   console.log(`RentalAgreement deployed to ${out.address} (chain ${out.chainId})`);
 }
 
