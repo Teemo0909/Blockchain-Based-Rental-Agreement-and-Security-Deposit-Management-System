@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 /// Smart Property Rental & Deposit Management.
 /// Money moves by pull-payment (credit + withdraw) so a hostile wallet cannot block settlement.
 contract RentalAgreement {
-    enum Status { Created, Active, Pending, Disputed, Closed }
+    enum Status { Created, Active, Pending, Disputed, Closed, Cancelled }
 
     struct Property { address owner; string name; uint256 rent; uint256 deposit; }
     struct Payment { uint256 amount; uint256 time; }
@@ -25,7 +25,11 @@ contract RentalAgreement {
         bool tenantOk;
         bool deposited;
         Status status;
+        uint64 deadline;      // while Pending/Disputed: when the silent party's turn times out
     }
+
+    // How long each party has to act before the other side can close the agreement without them.
+    uint256 public constant CLAIM_WINDOW = 14 days;
 
     Property[] public properties;
     Agreement[] private agreements; // read via getAgreement: a public getter of 16 fields is "stack too deep" without viaIR
@@ -40,6 +44,7 @@ contract RentalAgreement {
     event DeductionProposed(uint256 indexed id, uint256 amount, string reason);
     event Disputed(uint256 indexed id, string reason);
     event Settled(uint256 indexed id, uint256 toOwner, uint256 toTenant, string reason);
+    event Cancelled(uint256 indexed id, address indexed by);
 
     // 1. Register property
     function registerProperty(string calldata name, uint256 rent, uint256 deposit) external returns (uint256 id) {
@@ -58,7 +63,7 @@ contract RentalAgreement {
         require(tenant != address(0) && tenant != msg.sender, "bad tenant");
         require(arbiter != address(0) && arbiter != msg.sender && arbiter != tenant, "bad arbiter");
         require(end > start && end > block.timestamp, "bad dates");
-        agreements.push(Agreement(propertyId, msg.sender, tenant, arbiter, start, end, p.rent, p.deposit, 0, 0, terms, "", false, false, false, Status.Created));
+        agreements.push(Agreement(propertyId, msg.sender, tenant, arbiter, start, end, p.rent, p.deposit, 0, 0, terms, "", false, false, false, Status.Created, 0));
         id = agreements.length - 1;
         emit AgreementCreated(id, propertyId, tenant, arbiter);
     }
@@ -72,6 +77,15 @@ contract RentalAgreement {
         else revert("not party");
         if (a.ownerOk && a.tenantOk) a.status = Status.Active;
         emit Confirmed(id, msg.sender);
+    }
+
+    // Either party can walk away while no money is in the contract (before the deposit is paid).
+    function cancelAgreement(uint256 id) external {
+        Agreement storage a = agreements[id];
+        require(msg.sender == a.owner || msg.sender == a.tenant, "not party");
+        require(a.status == Status.Created || (a.status == Status.Active && !a.deposited), "cannot cancel");
+        a.status = Status.Cancelled;
+        emit Cancelled(id, msg.sender);
     }
 
     // 4. Tenant deposits the exact security deposit in ETH
@@ -110,7 +124,8 @@ contract RentalAgreement {
         a.deduction = amount;
         a.reason = reason;
         emit DeductionProposed(id, amount, reason);
-        if (amount == 0) _settle(a, id); else a.status = Status.Pending;
+        if (amount == 0) _settle(a, id);
+        else { a.status = Status.Pending; a.deadline = uint64(block.timestamp + CLAIM_WINDOW); }
     }
 
     // Tenant agrees to the deduction -> release
@@ -125,6 +140,7 @@ contract RentalAgreement {
         Agreement storage a = agreements[id];
         require(msg.sender == a.tenant && a.status == Status.Pending, "not allowed");
         a.status = Status.Disputed;
+        a.deadline = uint64(block.timestamp + CLAIM_WINDOW);
         emit Disputed(id, reason);
     }
 
@@ -134,6 +150,29 @@ contract RentalAgreement {
         require(deduction <= a.held, "exceeds deposit");
         a.deduction = deduction;
         a.reason = reason;
+        _settle(a, id);
+    }
+
+    // 8. Nobody can lock the deposit by staying silent. After CLAIM_WINDOW:
+    //    - owner never settled after the lease  -> tenant takes a full refund
+    //    - tenant never answered a deduction    -> owner closes with the proposed deduction
+    //    - arbiter never ruled on a dispute     -> full refund (an unproven deduction is not paid)
+    function claimTimeout(uint256 id) external {
+        Agreement storage a = agreements[id];
+        if (a.status == Status.Active) {
+            require(msg.sender == a.tenant && a.deposited, "not allowed");
+            require(block.timestamp >= a.end + CLAIM_WINDOW, "too early");
+            a.deduction = 0;
+            a.reason = "owner did not settle in time";
+        } else if (a.status == Status.Pending) {
+            require(msg.sender == a.owner, "not allowed");
+            require(block.timestamp >= a.deadline, "too early");
+        } else if (a.status == Status.Disputed) {
+            require(msg.sender == a.owner || msg.sender == a.tenant, "not allowed");
+            require(block.timestamp >= a.deadline, "too early");
+            a.deduction = 0;
+            a.reason = "arbiter did not rule in time";
+        } else revert("not allowed");
         _settle(a, id);
     }
 
