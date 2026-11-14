@@ -8,17 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* White and violet, light only (the brief asked for a white theme). Green and red keep their money meaning. */
 :root {
-  --bg: #E7ECE9; --surface: #FAFBF9; --ink: #1B2A41; --muted: #56657A; --line: #C6D0CA;
-  --brass: #A06E17; --brass-soft: #F1E3C4; --seal: #B23A2E; --leaf: #2E7552;
+  --bg: #FFFFFF; --surface: #F7F5FC; --ink: #241A45; --muted: #6A6187; --line: #E2DCF0;
+  --accent: #6D3FD1; --accent-soft: #EFE8FD; --seal: #C23848; --leaf: #1F8557;
   color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111821; --surface: #19232F; --ink: #E4EAE6; --muted: #9AA8B6; --line: #2E3B49;
-    --brass: #D9A441; --brass-soft: #3A3020; --seal: #E2695C; --leaf: #62B58C;
-    color-scheme: dark;
-  }
 }
 * { box-sizing: border-box; }
 body {
@@ -27,21 +21,26 @@ body {
 }
 h1, h2, h3 { line-height: 1.25; margin: 0; }
 button, input, select, textarea { font: inherit; color: inherit; }
-:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .btn {
   border: 1.5px solid var(--ink); background: var(--ink); color: var(--surface);
   padding: .55rem 1.1rem; border-radius: 6px; font-weight: 600; cursor: pointer;
 }
 .btn.ghost { background: transparent; color: var(--ink); }
 .btn.danger { background: var(--seal); border-color: var(--seal); color: #fff; }
-.btn:disabled { opacity: .5; cursor: progress; }
+.btn:disabled { opacity: .6; cursor: progress; }
+.btn.busy::after {
+  content: ""; display: inline-block; width: .85em; height: .85em; margin-left: .5rem; vertical-align: -.1em;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 header {
   display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; align-items: center;
   padding: .9rem clamp(16px, 4vw, 40px); border-bottom: 1px solid var(--line);
 }
 .brand { font-size: 1.35rem; font-weight: 700; margin-right: auto; display: flex; align-items: center; gap: .5rem; }
-.brand svg { color: var(--brass); }
+.brand svg { color: var(--accent); }
 .wallet { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
 .credit { color: var(--muted); }
 .credit strong { color: var(--ink); }
@@ -59,34 +58,40 @@ header {
   padding: .6rem .75rem; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 0 .5rem;
 }
 .list li button:hover { background: var(--surface); }
-.list li button[aria-current="true"] { background: var(--surface); border-left-color: var(--brass); }
+.list li button[aria-current="true"] { background: var(--surface); border-left-color: var(--accent); }
 .list .name { font-weight: 600; }
 .list .sub { grid-column: 1 / -1; font-size: .875rem; color: var(--muted); }
 .list .actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 .dot { font-size: .8rem; padding: 0 .5rem; border-radius: 99px; align-self: center; border: 1px solid currentColor; }
-.s0 { color: var(--muted); } .s1 { color: var(--ink); } .s2 { color: var(--brass); }
+.s0 { color: var(--muted); } .s1 { color: var(--ink); } .s2 { color: var(--accent); }
 .s3 { color: var(--seal); } .s4 { color: var(--leaf); }
 
 /* The key tag: the one loud element on the page */
 .tag {
-  position: relative; background: var(--brass-soft); border: 2px solid var(--brass);
+  position: relative; background: var(--accent-soft); border: 2px solid var(--accent);
   border-radius: 18px 60px 60px 18px; padding: 1.4rem 5.5rem 1.4rem 1.6rem;
 }
 .tag::after {
   content: ""; position: absolute; right: 2rem; top: 50%; width: 1.6rem; height: 1.6rem; margin-top: -.8rem;
-  border-radius: 50%; background: var(--bg); border: 2px solid var(--brass);
+  border-radius: 50%; background: var(--bg); border: 2px solid var(--accent);
 }
 .tag .room { font-size: 1.1rem; font-weight: 600; }
 .tag .room span { color: var(--muted); font-weight: 400; }
-.tag .amount { font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; line-height: 1.1; color: var(--brass); margin: .25rem 0; }
+.tag .amount { font-size: clamp(2.2rem, 6vw, 3.4rem); font-weight: 700; line-height: 1.1; color: var(--accent); margin: .25rem 0; }
 .tag .caption { color: var(--muted); }
+/* When the money on the tag changes, it swings on its ring like a real key tag */
+.tag.swing { animation: swing 1.2s ease-out; transform-origin: calc(100% - 2.8rem) 50%; }
+@keyframes swing { 15% { transform: rotate(-4deg); } 35% { transform: rotate(2.5deg); } 55% { transform: rotate(-1.2deg); } 75% { transform: rotate(.5deg); } }
 
 .meter { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--line); margin: 1.25rem 0 .4rem; }
 .meter i { display: block; height: 100%; }
-.meter .held { background: var(--brass); }
+.meter .held { background: var(--accent); }
 .meter .ded { background: repeating-linear-gradient(135deg, var(--seal) 0 6px, transparent 6px 10px); }
 .meter .ded.done { background: var(--seal); }
 .meter .back { background: var(--leaf); }
+.meter.grow i { animation: widen .7s cubic-bezier(.2, .7, .2, 1) both; }
+.meter.grow i + i { animation-delay: .35s; }
+@keyframes widen { from { width: 0; } }
 .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .9rem; color: var(--muted); }
 
 .steps { list-style: none; padding: 0; margin: 2.25rem 0 1.75rem; display: grid; grid-template-columns: repeat(5, 1fr); }
@@ -109,7 +114,7 @@ header {
   border: 2px solid var(--line); background: var(--bg); color: var(--muted);
 }
 .done .node { background: var(--leaf); border-color: var(--leaf); color: var(--surface); }
-.now .node { background: var(--brass); border-color: var(--brass); color: var(--surface); }
+.now .node { background: var(--accent); border-color: var(--accent); color: var(--surface); }
 .node svg path { stroke-dasharray: 20; }
 .pop .node { animation: pop .4s cubic-bezier(.3, 1.6, .6, 1) var(--t) both; }
 .pop .node svg path { animation: draw .3s ease-out calc(var(--t) + .2s) both; }
@@ -156,7 +161,10 @@ th, td { text-align: left; padding: .4rem 0; border-bottom: 1px solid var(--line
 th { color: var(--muted); font-weight: 500; }
 
 dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); padding: 1.5rem; width: min(520px, calc(100vw - 32px)); }
-dialog::backdrop { background: rgb(17 24 33 / .45); }
+dialog::backdrop { background: rgb(36 26 69 / .4); }
+dialog[open] { animation: rise .22s ease-out; }
+dialog[open]::backdrop { animation: appear .22s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 dialog h2 { font-size: 1.25rem; margin-bottom: 1rem; }
 dialog .row { display: flex; gap: .75rem; justify-content: flex-end; margin-top: .5rem; }
 
@@ -170,8 +178,12 @@ code { font-size: .9em; background: var(--surface); padding: .1rem .35rem; borde
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: calc(100vw - 32px);
   background: var(--ink); color: var(--surface); padding: .7rem 1.1rem; border-radius: 8px; display: none;
 }
-#toast.show { display: block; }
+#toast.show { display: block; animation: toastIn .25s ease-out; }
 #toast.err { background: var(--seal); color: #fff; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 12px); } }
+@media (prefers-reduced-motion: reduce) {
+  .tag.swing, .meter.grow i, dialog[open], dialog[open]::backdrop, #toast.show { animation: none; }
+}
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -243,7 +255,20 @@ const eth = (wei) => `${ethers.formatEther(wei)} ETH`;
 const day = (ts) => new Date(Number(ts) * 1000).toLocaleDateString("th-TH", { dateStyle: "medium" });
 const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-let cfg, provider, c, me, items = [], selected = null, chainNow = 0, drawnSteps = {};
+let cfg, provider, c, me, items = [], selected = null, chainNow = 0, drawn = {};
+const calm = matchMedia("(prefers-reduced-motion: reduce)");
+
+// Rolls the tag's ETH figure from the old balance to the new one.
+function countUp(el) {
+  const from = BigInt(el.dataset.from), to = BigInt(el.dataset.to), start = performance.now(), ms = 900;
+  if (calm.matches) return;
+  const tick = (now) => {
+    const k = Math.min(1, (now - start) / ms), ease = 1 - (1 - k) ** 3;
+    el.textContent = k < 1 ? `${ethers.formatEther(from + ((to - from) * BigInt(Math.round(ease * 1000))) / 1000n).slice(0, 8)} ETH` : eth(to);
+    if (k < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
 function who(addr) { return addr.toLowerCase() === me ? "คุณ" : short(addr); }
 
@@ -261,6 +286,7 @@ function errText(e) {
 
 async function send(btn, fn, done) {
   btn.disabled = true;
+  btn.classList.add("busy");
   try {
     toast("ยืนยันรายการใน MetaMask");
     const t = await fn();
@@ -270,7 +296,7 @@ async function send(btn, fn, done) {
     await load();
     return true;
   } catch (e) { toast(errText(e), true); return false; }
-  finally { btn.disabled = false; }
+  finally { btn.disabled = false; btn.classList.remove("busy"); }
 }
 
 function intro(title, body, action) {
@@ -349,6 +375,7 @@ function render() {
   $("#newProperty").onclick = () => $("#dlgProperty").showModal();
   $("#newAgreement").onclick = openAgreementDialog;
   if (selected !== null) bindActions(items.find((x) => x.id === selected));
+  document.querySelectorAll(".amount[data-from]").forEach(countUp);
 }
 
 function roleOf(a) {
@@ -362,23 +389,24 @@ function periods(a) { return Math.floor((Number(a.end - a.start) + MONTH - 1) / 
 function detail({ id, a, name, payments }) {
   const st = Number(a.status), total = periods(a), paid = payments.length;
   const pct = (v) => (a.deposit > 0n ? Number((v * 10000n) / a.deposit) / 100 : 0);
-  let amount, caption, meter = "", legend = "";
+  let wei, caption, meter = "", legend = "";
   if (st === 4) {
-    amount = eth(a.deposit - a.deduction); caption = "คืนให้ผู้เช่าแล้ว";
+    wei = a.deposit - a.deduction; caption = "คืนให้ผู้เช่าแล้ว";
     meter = `<i class="back" style="width:${100 - pct(a.deduction)}%"></i><i class="ded done" style="width:${pct(a.deduction)}%"></i>`;
     legend = `<span>คืนผู้เช่า ${eth(a.deposit - a.deduction)}</span><span>หักให้เจ้าของ ${eth(a.deduction)}</span>`;
   } else if (a.deposited) {
-    amount = eth(a.held); caption = "ถือไว้ในสัญญา ยังไม่มีใครถอนได้";
+    wei = a.held; caption = "ถือไว้ในสัญญา ยังไม่มีใครถอนได้";
     const proposed = st === 2 || st === 3 ? a.deduction : 0n;
     meter = `<i class="held" style="width:${100 - pct(proposed)}%"></i><i class="ded" style="width:${pct(proposed)}%"></i>`;
     if (proposed > 0n) legend = `<span>เจ้าของเสนอหัก ${eth(proposed)}</span>`;
   } else {
-    amount = eth(a.deposit); caption = "ยอดมัดจำที่ต้องวาง ยังไม่ได้วาง";
+    wei = a.deposit; caption = "ยอดมัดจำที่ต้องวาง ยังไม่ได้วาง";
   }
   const step = st === 0 ? 1 : !a.deposited ? 2 : st === 1 ? 3 : st === 4 ? 5 : 4;
-  // Animate only what changed since this agreement was last drawn: connector grows, then the node pops, one step at a time.
-  const prev = drawnSteps[id] ?? 0, moved = prev !== step || !(id in drawnSteps);
-  drawnSteps[id] = step;
+  // Animate only what changed since this agreement was last drawn (e.g. after a transaction), never on a plain re-render.
+  const last = drawn[id], prev = last?.step ?? 0, moved = !last || prev !== step;
+  const tagChanged = last && (last.wei !== wei || last.caption !== caption), meterChanged = last && last.meter !== meter;
+  drawn[id] = { step, wei, caption, meter };
   const check = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 6.8 5.3 9.5l5.2-6"/></svg>`;
   const steps = ["สร้างสัญญา", "ยืนยันทั้งสองฝ่าย", "วางเงินมัดจำ", `ชำระค่าเช่า ${paid}/${total} งวด`, "สรุปและคืนมัดจำ"]
     .map((s, i) => {
@@ -390,12 +418,12 @@ function detail({ id, a, name, payments }) {
     }).join("");
   const rows = payments.map((p, i) => `<tr><td>งวดที่ ${i + 1}</td><td>${eth(p.amount)}</td><td>${day(p.time)}</td></tr>`).join("");
   return `
-    <div class="tag">
+    <div class="tag${tagChanged ? " swing" : ""}">
       <div class="room">${esc(name)} <span>สัญญา #${id} · ${roleOf(a)}</span></div>
-      <div class="amount">${amount}</div>
+      <div class="amount"${tagChanged && last.wei !== wei ? ` data-from="${last.wei}" data-to="${wei}"` : ""}>${eth(wei)}</div>
       <div class="caption">${caption}</div>
     </div>
-    <div class="meter" aria-hidden="true">${meter}</div>
+    <div class="meter${meterChanged ? " grow" : ""}" aria-hidden="true">${meter}</div>
     <div class="legend">${legend}</div>
     <ol class="steps" aria-label="ขั้นตอนของสัญญา">${steps}</ol>
     <div class="panel" id="action">${actionPanel(a, paid, total)}</div>
