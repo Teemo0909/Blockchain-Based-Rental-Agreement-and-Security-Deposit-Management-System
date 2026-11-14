@@ -90,11 +90,30 @@ header {
 .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; font-size: .9rem; color: var(--muted); }
 
 .steps { list-style: none; padding: 0; margin: 1.75rem 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; counter-reset: s; }
-.steps li { counter-increment: s; border-top: 3px solid var(--line); padding-top: .5rem; font-size: .9rem; color: var(--muted); }
+.steps li {
+  counter-increment: s; position: relative; border-top: 3px solid var(--line); padding-top: .5rem;
+  font-size: .9rem; color: var(--muted);
+}
 .steps li::before { content: counter(s) " "; font-weight: 700; }
-.steps li.done { border-color: var(--leaf); color: var(--ink); }
-.steps li.now { border-color: var(--brass); color: var(--ink); font-weight: 600; }
+/* The progress fill sits over the grey track and grows left to right */
+.steps li::after {
+  content: ""; position: absolute; left: 0; right: 0; top: -3px; height: 3px;
+  transform: scaleX(0); transform-origin: left;
+}
+.steps li.done, .steps li.now { color: var(--ink); }
+.steps li.now { font-weight: 600; }
+.steps li.done::after { background: var(--leaf); transform: scaleX(1); }
+.steps li.done.fill::after { animation: fill .45s ease-out var(--delay) both; }
+.steps li.now::after {
+  background: var(--brass); transform: scaleX(1);
+  animation: fill .45s ease-out var(--delay) both, breathe 1.6s ease-in-out calc(var(--delay) + .45s) infinite alternate;
+}
+@keyframes fill { from { transform: scaleX(0); } }
+@keyframes breathe { to { opacity: .35; } }
 @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+  .steps li::after { animation: none !important; }
+}
 
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1.25rem 1.4rem; margin-bottom: 1.5rem; }
 .panel h3 { font-size: 1.1rem; margin-bottom: .5rem; }
@@ -207,7 +226,7 @@ const eth = (wei) => `${ethers.formatEther(wei)} ETH`;
 const day = (ts) => new Date(Number(ts) * 1000).toLocaleDateString("th-TH", { dateStyle: "medium" });
 const short = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
-let cfg, provider, c, me, items = [], selected = null, chainNow = 0;
+let cfg, provider, c, me, items = [], selected = null, chainNow = 0, drawnSteps = {};
 
 function who(addr) { return addr.toLowerCase() === me ? "คุณ" : short(addr); }
 
@@ -340,8 +359,11 @@ function detail({ id, a, name, payments }) {
     amount = eth(a.deposit); caption = "ยอดมัดจำที่ต้องวาง ยังไม่ได้วาง";
   }
   const step = st === 0 ? 1 : !a.deposited ? 2 : st === 1 ? 3 : st === 4 ? 5 : 4;
+  // Animate only the steps completed since this agreement was last drawn, staggered left to right.
+  const prev = drawnSteps[id] ?? 0, delay = (i) => `--delay:${Math.max(0, i - prev) * 0.18}s`;
+  drawnSteps[id] = step;
   const steps = ["สร้างสัญญา", "ยืนยันทั้งสองฝ่าย", "วางเงินมัดจำ", `ชำระค่าเช่า ${paid}/${total} งวด`, "สรุปและคืนมัดจำ"]
-    .map((s, i) => `<li class="${i < step || st === 4 ? "done" : i === step ? "now" : ""}">${s}</li>`).join("");
+    .map((s, i) => `<li class="${i < step ? `done${i >= prev ? " fill" : ""}` : i === step ? "now" : ""}" style="${delay(i)}">${s}</li>`).join("");
   const rows = payments.map((p, i) => `<tr><td>งวดที่ ${i + 1}</td><td>${eth(p.amount)}</td><td>${day(p.time)}</td></tr>`).join("");
   return `
     <div class="tag">
